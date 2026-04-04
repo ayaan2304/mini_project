@@ -1,0 +1,12 @@
+{
+  "name": "smart-elearning-platform",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "install:all": "npm install --workspace backend && npm install --workspace frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
