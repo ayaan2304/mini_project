@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { apiRequest } from "../api/client";
+import { apiRequest } from "../services/api/client";
 import { useAuth } from "../context/AuthContext";
 
 const CourseDetailPage = () => {
@@ -11,6 +11,7 @@ const CourseDetailPage = () => {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [score, setScore] = useState(null);
+  const [quizError, setQuizError] = useState("");
 
   const refresh = async () => {
     const [courseData, statusData] = await Promise.all([
@@ -31,12 +32,19 @@ const CourseDetailPage = () => {
   };
 
   const startQuiz = async () => {
+    setQuizError("");
     const data = await apiRequest(`/quiz/${id}`, { token });
     setQuiz(data);
     setAnswers(new Array(data.questions.length).fill(""));
+    setScore(data.previousResult?.score ?? null);
   };
 
   const submitQuiz = async () => {
+    setQuizError("");
+    if (answers.some((value) => !value)) {
+      setQuizError("Please answer all questions before submitting.");
+      return;
+    }
     const data = await apiRequest("/quiz/submit", { method: "POST", token, body: { courseId: id, answers } });
     setScore(data.score);
   };
@@ -78,32 +86,39 @@ const CourseDetailPage = () => {
         ))}
       </div>
 
-      <div className="card">
+      <div className="card" style={{ marginTop: 20 }}>
         <h3>Course Quiz</h3>
+        <p className="muted">This quiz has minimum 5 MCQs. Only your final result is stored in database.</p>
         {!quiz && <button className="btn" onClick={startQuiz}>Start Quiz</button>}
-        {quiz && quiz.questions.map((q, i) => (
-          <div key={i} className="quiz-block">
-            <p>{i + 1}. {q.question}</p>
-            {q.options.map((opt) => (
-              <label key={opt} className="option">
-                <input
-                  type="radio"
-                  name={`q-${i}`}
-                  checked={answers[i] === opt}
-                  onChange={() => {
-                    const copy = [...answers];
-                    copy[i] = opt;
-                    setAnswers(copy);
-                  }}
-                />
-                {opt}
-              </label>
+        {quiz && (
+          <>
+            {quiz.questions.map((q, i) => (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <p>{i + 1}. {q.question}</p>
+                {q.options.map((opt) => (
+                  <label key={opt} style={{ display: "block", margin: "6px 0" }}>
+                    <input
+                      type="radio"
+                      name={`q-${i}`}
+                      checked={answers[i] === opt}
+                      onChange={() => {
+                        const copy = [...answers];
+                        copy[i] = opt;
+                        setAnswers(copy);
+                      }}
+                    />
+                    {" "}{opt}
+                  </label>
+                ))}
+              </div>
             ))}
-          </div>
-        ))}
-        {quiz && <button className="btn secondary" onClick={submitQuiz}>Submit Quiz</button>}
-        {score !== null && <p className="success">Your score: {score}</p>}
+            {quizError && <p className="error">{quizError}</p>}
+            <button className="btn secondary" onClick={submitQuiz}>Submit Quiz</button>
+          </>
+        )}
+        {score !== null && <p className="success" style={{ marginTop: 10 }}>Your score: {score}/{quiz?.questions?.length || 5}</p>}
       </div>
+
     </section>
   );
 };

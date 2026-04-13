@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { apiRequest } from "../api/client";
+import { apiRequest } from "../services/api/client";
 import { useAuth } from "../context/AuthContext";
 
 const VideoPlayerPage = () => {

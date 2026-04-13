@@ -1,40 +1,59 @@
-import QuizResult from "../models/QuizResult.js";
-import Enrollment from "../models/Enrollment.js";
+/**
+ * FILE: leaderboardController.js
+ * PURPOSE: Handles fetching and ranking users based on quiz scores.
+ *
+ * FLOW:
+ * 1) GET /api/leaderboard → Fetch all users ranked by highest quiz score
+ * 2) Aggregates quiz results to get highest score per user
+ * 3) Sorts by score descending and adds rank
+ * 4) Returns top performers with their scores and rankings
+ *
+ * WHY THIS EXISTS:
+ * Provides gamification through leaderboard, motivating users to perform better in quizzes.
+ *
+ * DEPENDENCIES:
+ * - User model for user details
+ * - QuizResult model for scoring data
+ */
 import User from "../models/User.js";
+import QuizResult from "../models/QuizResult.js";
 
 export const getLeaderboard = async (req, res) => {
-  const results = await QuizResult.aggregate([
-    { $group: { _id: "$userId", quizScore: { $sum: "$score" } } },
-  ]);
+  try {
+    console.log("[LEADERBOARD] fetching leaderboard");
 
-  const progressRows = await Enrollment.aggregate([
-    { $group: { _id: "$userId", avgProgress: { $avg: "$progress" } } },
-  ]);
+    // Aggregate quiz results to get highest score per user
+    const leaderboardData = await QuizResult.aggregate([
+      {
+        $group: {
+          _id: "$userId",
+          highestScore: { $max: "$score" },
+          totalQuizzesTaken: { $sum: 1 },
+        },
+      },
+      { $sort: { highestScore: -1 } },
+      { $limit: 100 }, // Top 100 users
+    ]);
 
-  const progressMap = new Map(progressRows.map((p) => [String(p._id), Math.round(p.avgProgress || 0)]));
+    // Fetch user details for each entry
+    const leaderboard = await Promise.all(
+      leaderboardData.map(async (entry, index) => {
+        const user = await User.findById(entry._id).select("name email");
+        return {
+          rank: index + 1,
+          userId: entry._id,
+          name: user?.name || "Unknown",
+          email: user?.email || "N/A",
+          score: entry.highestScore,
+          totalQuizzesTaken: entry.totalQuizzesTaken,
+        };
+      })
+    );
 
-  const scoreRows = results
-    .map((r) => ({
-      userId: String(r._id),
-      quizScore: r.quizScore,
-      courseProgress: progressMap.get(String(r._id)) || 0,
-    }))
-    .map((r) => ({ ...r, totalScore: r.quizScore + r.courseProgress }))
-    .sort((a, b) => b.totalScore - a.totalScore);
-
-  const users = await User.find({ _id: { $in: scoreRows.map((r) => r.userId) } }).select("name email");
-  const userMap = new Map(users.map((u) => [String(u._id), u]));
-
-  const topUsers = scoreRows.slice(0, 20).map((row, index) => ({
-    rank: index + 1,
-    userId: row.userId,
-    name: userMap.get(row.userId)?.name || "Unknown",
-    email: userMap.get(row.userId)?.email || "",
-    quizScore: row.quizScore,
-    courseProgress: row.courseProgress,
-    totalScore: row.totalScore,
-  }));
-
-  const myRank = topUsers.find((item) => item.userId === String(req.user.id)) || null;
-  res.json({ topUsers, myRank });
+    console.log("[LEADERBOARD] success", { totalUsers: leaderboard.length });
+    return res.json({ leaderboard });
+  } catch (error) {
+    console.error("[LEADERBOARD] error", error.message);
+    return res.status(500).json({ message: "Failed to fetch leaderboard" });
+  }
 };

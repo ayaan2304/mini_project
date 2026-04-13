@@ -1,3 +1,21 @@
+/**
+ * FILE: paymentController.js
+ * PURPOSE: Handles mock subscription checkout and payment history retrieval.
+ *
+ * FLOW:
+ * 1) Validate checkout payload.
+ * 2) Save successful payment transaction.
+ * 3) Update enrollment with paid status and expiry.
+ * 4) Remove trial dates so subscription is the only active access mode.
+ *
+ * WHY THIS EXISTS:
+ * It keeps subscription rules consistent between billing and course access checks.
+ *
+ * DEPENDENCIES:
+ * - Payment model for transaction records
+ * - Enrollment model for access updates
+ * - addDays utility for plan expiry calculation
+ */
 import Payment from "../models/Payment.js";
 import Enrollment from "../models/Enrollment.js";
 import { addDays } from "../utils/dateUtils.js";
@@ -26,10 +44,8 @@ export const checkoutPayment = async (req, res) => {
       courseId,
       paymentStatus: "SUCCESS",
       expiryDate,
-      $setOnInsert: {
-        trialStartDate: now,
-        trialEndDate: addDays(now, 3),
-      },
+      trialStartDate: null,
+      trialEndDate: null,
     },
     { upsert: true, new: true }
   );

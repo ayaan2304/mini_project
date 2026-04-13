@@ -1,12 +1,28 @@
+/**
+ * FILE: seed.js
+ * PURPOSE: Populates the database with baseline users, courses, and enrollments.
+ *
+ * FLOW:
+ * 1) Connect to the database.
+ * 2) Clear core collections.
+ * 3) Insert sample users and courses with videos.
+ * 4) Insert example enrollments for quick testing.
+ *
+ * WHY THIS EXISTS:
+ * It gives a predictable starter dataset for local development and demos.
+ *
+ * DEPENDENCIES:
+ * - User/Course/Enrollment models
+ * - connectDB for database connection
+ * - bcryptjs for test user password hashing
+ */
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { connectDB } from "./config/db.js";
 import User from "./models/User.js";
 import Course from "./models/Course.js";
-import Quiz from "./models/Quiz.js";
 import Enrollment from "./models/Enrollment.js";
-import QuizResult from "./models/QuizResult.js";
 
 dotenv.config();
 
@@ -124,31 +140,13 @@ sampleCourses.push(
   }
 );
 
-const quizForCourse = (courseId) => ({
-  courseId,
-  questions: [
-    {
-      question: "What is the key goal of this course?",
-      options: ["Entertainment", "Structured learning", "Gaming", "Random tasks"],
-      correctAnswer: "Structured learning",
-    },
-    {
-      question: "Which option is best for regular progress?",
-      options: ["Skip modules", "Follow modules step by step", "Never revise", "Ignore quizzes"],
-      correctAnswer: "Follow modules step by step",
-    },
-  ],
-});
-
 const seed = async () => {
   await connectDB();
 
   await Promise.all([
     User.deleteMany({}),
     Course.deleteMany({}),
-    Quiz.deleteMany({}),
     Enrollment.deleteMany({}),
-    QuizResult.deleteMany({}),
   ]);
 
   const hashed = await bcrypt.hash("123456", 10);
@@ -159,16 +157,10 @@ const seed = async () => {
   ]);
 
   const courses = await Course.insertMany(sampleCourses);
-  await Quiz.insertMany(courses.map((course) => quizForCourse(course._id)));
 
   await Enrollment.insertMany([
     { userId: users[1]._id, courseId: courses[0]._id, progress: 80, paymentStatus: "SUCCESS", expiryDate: new Date(Date.now() + 86400000 * 30) },
     { userId: users[2]._id, courseId: courses[1]._id, progress: 70, paymentStatus: "SUCCESS", expiryDate: new Date(Date.now() + 86400000 * 30) },
-  ]);
-
-  await QuizResult.insertMany([
-    { userId: users[1]._id, courseId: courses[0]._id, score: 40 },
-    { userId: users[2]._id, courseId: courses[1]._id, score: 30 },
   ]);
 
   console.log("Seed complete. Users login password: 123456");

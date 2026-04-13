@@ -1,6 +1,23 @@
+/**
+ * FILE: HomePage.jsx
+ * PURPOSE: Public landing page that highlights platform value and featured courses.
+ *
+ * FLOW:
+ * 1) Fetch public course list from the backend.
+ * 2) Render introductory content and quick navigation actions.
+ * 3) Show featured courses with conditional links based on auth state.
+ *
+ * WHY THIS EXISTS:
+ * It helps new visitors discover course offerings before account creation.
+ *
+ * DEPENDENCIES:
+ * - apiRequest to fetch public courses
+ * - AuthContext token to adjust CTA behavior
+ * - react-router-dom Link/useNavigate for navigation
+ */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiRequest } from "../api/client";
+import { apiRequest } from "../services/api/client";
 import { useAuth } from "../context/AuthContext";
 
 const HomePage = () => {
@@ -25,8 +42,7 @@ const HomePage = () => {
         </h1>
         <p className="muted" style={{ maxWidth: 680 }}>
           Learn Programming, AI/ML, Web Development and Languages with a structured path.
-          Start with a 3‑day trial, attempt quizzes, and climb the leaderboard. Upgrade
-          to unlock full content and projects.
+          Start with a 3-day trial and upgrade to unlock full course modules and projects.
         </p>
         <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
           <Link className="btn" to={token ? "/dashboard" : "/register"}>Get Started</Link>
@@ -56,9 +72,9 @@ const HomePage = () => {
         <h4>Why choose us?</h4>
         <ul className="list">
           <li>Structured beginner → advanced tracks</li>
-          <li>Daily quizzes and leaderboard</li>
+          <li>Practical videos organized by module</li>
           <li>Free 3‑day trial on your first course</li>
-          <li>Demo session with experts</li>
+          <li>Simple enrollment and subscription flow</li>
         </ul>
       </aside>
     </section>

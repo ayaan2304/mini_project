@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiRequest } from "../api/client";
+import { apiRequest } from "../services/api/client";
 import { useAuth } from "../context/AuthContext";
 
 const RegisterPage = () => {

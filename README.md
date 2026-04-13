@@ -1,143 +1,179 @@
-<<<<<<< HEAD
-# mini_project
-=======
-# Smart Subscription-Based E-Learning Platform
+# Smart E-Learning Platform (Clean MERN Version)
 
-A polished MERN stack e-learning platform with dark SaaS-style UI, strict 3-day trial control, simulated payments, quizzes, leaderboard, and demo consultation booking.
+This is a cleaned and simplified MERN stack project focused on core learning features:
 
-## 1) Project Overview
-This project is designed for students and working professionals. It supports structured course learning, trial-to-paid conversion, quiz-based evaluation, and rank tracking.
+- User authentication (register/login/logout)
+- Course list and course detail pages with videos
+- Enrollment tracking (student, course, start date)
+- Subscription purchase flow with full course unlock
 
-Main flow:
-`Register/Login -> Book Demo -> Open Course -> Start Trial -> Watch Limited Videos -> Attempt Quiz -> Check Leaderboard -> Buy Plan -> Unlock Full Content`
+The project uses MongoDB Atlas and is structured to be easy to read, maintain, and extend.
 
-## 2) Features
-- JWT authentication (register/login)
-- Dashboard with featured courses and session history
-- Course detail with outcomes + module videos
-- Locked premium video behavior after trial expiry
-- Strict 3-day trial logic per course enrollment
-- Mock payment checkout (1 month / 2 months)
-- Quiz engine (MCQ) with score saving
-- Leaderboard ranking by quiz score + course progress
-- Demo consultation booking from login and dashboard
-- Professional dark theme UI
+## Clean Folder Structure
 
-## 3) Tech Stack
-- Frontend: React, React Router, Vite
-- Backend: Node.js, Express.js
-- Database: MongoDB, Mongoose
-- Auth: JWT
+```text
+mini_project/
+  backend/
+    src/
+      config/
+      controllers/
+      middleware/
+      models/
+      routes/
+      utils/
+      seed.js
+      server.js
+  frontend/
+    src/
+      components/
+      context/
+      pages/
+      services/
+        api/
+          client.js
+      styles/
+      App.jsx
+      main.jsx
+```
 
-## 4) Folder Structure
-- `frontend/`
-  - `src/pages` UI screens
-  - `src/components` reusable UI blocks
-  - `src/context` auth state
-  - `src/api` API helper
-- `backend/`
-  - `src/models` Mongoose schemas
-  - `src/controllers` request logic
-  - `src/routes` API routes
-  - `src/middleware` auth/access middleware
-  - `src/config` DB connection
-  - `src/seed.js` sample data generator
+## Core Features
 
-## 5) API Documentation
+### 1) Authentication
+- Register and login with JWT tokens.
+- Passwords are hashed using bcrypt before storage.
+- Email is normalized (trim + lowercase) to avoid login mismatch issues.
+
+### 2) Courses
+- Public course list on homepage.
+- Protected course detail page for signed-in users.
+- Video modules are unlocked based on trial/subscription access rules.
+
+### 3) Enrollment
+- Trial can be started per course.
+- Enrollment details are available at `GET /api/enroll/my`.
+- Dashboard shows:
+  - student name
+  - enrolled course
+  - enrollment start date
+  - current status
+
+### 4) Payments / Subscription
+- Mock checkout supports 30/60 day plans.
+- On successful subscription:
+  - trial dates are removed
+  - paid access is activated
+  - all modules in that purchased course are unlocked
+
+## Removed During Cleanup
+
+The following unused or out-of-scope modules were removed:
+
+- Quiz
+- QuizResult
+- DemoSession
+- Leaderboard
+- Old frontend `src/api/client.js` helper (moved to `src/services/api/client.js`)
+
+## API Reference
+
 ### Auth
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 
 ### Courses
-- `GET /api/courses`
-- `GET /api/courses/:id`
-- `POST /api/courses`
+- `GET /api/courses` (public)
+- `GET /api/courses/:id` (protected)
+- `POST /api/courses` (protected)
 
-### Enrollment / Trial
-- `POST /api/enroll/start-trial`
-- `GET /api/enroll/status/:courseId`
-
-### Payment
-- `POST /api/payment/buy`
-- `POST /api/payment/checkout`
-- `GET /api/payment/history`
-
-### Demo Session
-- `POST /api/demo/book`
-- `GET /api/demo/my-sessions`
-
-### Quiz
-- `GET /api/quiz/:courseId`
-- `POST /api/quiz/submit`
-
-### Leaderboard
-- `GET /api/leaderboard`
-
-## 6) Database Schema Explanation
-### User
-- `name`, `email`, `password`, `role`
-
-### Course
-- `title`, `description`, `outcomes`, `domain`, `level`, `price`, `videos[]`
-- Video fields: `title`, `url`, `module`, `isFreePreview`
-
-### Enrollment (Core Access Control)
-- `userId`, `courseId`, `trialStartDate`, `trialEndDate`, `expiryDate`, `paymentStatus`, `progress`
+### Enrollment
+- `POST /api/enroll/start-trial` (protected)
+- `GET /api/enroll/status/:courseId` (protected)
+- `GET /api/enroll/my` (protected)
 
 ### Payment
-- `userId`, `courseId`, `amount`, `status`, `planDurationDays`
+- `POST /api/payment/checkout` (protected)
+- `POST /api/payment/buy` (protected, alias)
+- `GET /api/payment/history` (protected)
 
-### Quiz
-- `courseId`, `questions[]`
+## Environment Setup
 
-### QuizResult
-- `userId`, `courseId`, `score`
+Create `backend/.env`:
 
-### DemoSession
-- `userId`, `date`, `topic`, `status`
+```env
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/<db>?retryWrites=true&w=majority
+JWT_SECRET=your_jwt_secret
+PORT=5000
+CLIENT_URL=http://localhost:5173
+```
 
-## 7) How Trial Works
-- Trial starts when user clicks Start Trial on course detail page.
-- Backend sets:
-  - `trialStartDate = now`
-  - `trialEndDate = now + 3 days`
-- During trial:
-  - first 1-2 videos are always free
-  - premium videos are unlocked because trial is active
-- After trial end and without payment:
-  - premium videos become locked (`🔒` UI)
+Optional `frontend/.env`:
 
-## 8) How Payment Works
-- User selects plan (30 or 60 days) in Payment page.
-- Mock checkout marks payment `SUCCESS` and saves record.
-- Enrollment updates:
-  - `paymentStatus = SUCCESS`
-  - `expiryDate = now + planDurationDays`
-- While subscription is active, full content stays unlocked.
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
-## 9) Run Locally
-1. Copy env files
-   - `backend/.env.example` -> `backend/.env`
-   - `frontend/.env.example` -> `frontend/.env`
-2. Install
-   - `npm install`
-   - `npm run install:all`
-3. Seed sample data
-   - `npm run seed --workspace backend`
-4. Start app
-   - `npm run dev`
+If `VITE_API_URL` is not set, frontend uses `/api` and Vite proxy.
 
-Frontend: `http://localhost:5173`
-Backend: `http://localhost:5000`
+## Install and Run
 
-## 10) Sample Test Flow
-1. Register new user or use seeded user (`ayaan@example.com` / `123456`)
-2. Login
-3. Book free demo session
-4. Open course and start trial
-5. Watch unlocked videos
-6. Take quiz and submit score
-7. Visit leaderboard
-8. Buy course plan and unlock all videos
->>>>>>> dd9c299 (feat: initial commit - smart e-learning platform (trial, payments, quiz, leaderboard, demo))
+From `mini_project` root:
+
+```bash
+npm install
+```
+
+Install backend and frontend packages if needed:
+
+```bash
+cd backend && npm install
+cd ../frontend && npm install
+```
+
+Run backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+Run frontend (separate terminal):
+
+```bash
+cd frontend
+npm run dev
+```
+
+URLs:
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:5000/api/health`
+
+## Seed Data (Optional)
+
+To reset and seed sample users/courses/enrollments:
+
+```bash
+cd backend
+npm run seed
+```
+
+Default seeded password: `123456`
+
+## Quick Verification Flow
+
+1. Register a new user.
+2. Login with same credentials.
+3. Open Courses and enter one course detail page.
+4. Start trial and verify partial access behavior.
+5. Buy subscription plan and return to course detail.
+6. Verify all modules are unlocked and trial is removed.
+
+## Notes for Future Development
+
+- Keep API calls inside `frontend/src/services/api`.
+- Add any new feature with:
+  - model
+  - controller
+  - route
+  - page/component usage
+- Update README whenever API contracts or core flows change.
 
